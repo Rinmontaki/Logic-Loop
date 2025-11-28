@@ -1,0 +1,21 @@
+{
+  "files": {
+    "main.css": "/static/css/main.5c8d2279.css",
+    "main.js": "/static/js/main.e5067d42.js",
+    "static/media/Logo.png": "/static/media/Logo.bfecde693e9e89839234.png",
+    "static/media/ciclos.png": "/static/media/ciclos.d761d610d3ae8b68d976.png",
+    "static/media/funciones.png": "/static/media/funciones.814144315f3c53b0edc3.png",
+    "static/media/Conceptos.png": "/static/media/Conceptos.a66e9ae29403cc557560.png",
+    "static/media/matrices.jpg": "/static/media/matrices.7f4d3a5f053ddac26814.jpg",
+    "static/media/archivos.jpg": "/static/media/archivos.94024ae1d79276cdb8bc.jpg",
+    "static/media/vectores.jpg": "/static/media/vectores.ef230c54c35662e959ee.jpg",
+    "static/media/registros.jpg": "/static/media/registros.eee4833be64e6f57c58f.jpg",
+    "index.html": "/index.html",
+    "main.5c8d2279.css.map": "/static/css/main.5c8d2279.css.map",
+    "main.e5067d42.js.map": "/static/js/main.e5067d42.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.5c8d2279.css",
+    "static/js/main.e5067d42.js"
+  ]
+}

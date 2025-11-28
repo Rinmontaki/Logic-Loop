@@ -1,0 +1,114 @@
+.lpp-carousel-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin: 0 auto 32px auto;
+  position: relative;
+  min-height: 420px;
+}
+.lpp-carousel-arrow {
+  background: #fff;
+  border: none;
+  font-size: 2.2rem;
+  color: #004aad;
+  cursor: pointer;
+  z-index: 2;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  box-shadow: 0 2px 8px #004aad22;
+  transition: background 0.2s;
+}
+.lpp-carousel-arrow:hover {
+  background: #e6f0ff;
+}
+.lpp-carousel-track {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 1200px;
+  position: relative;
+  min-height: 400px;
+}
+.lpp-carousel-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 16px #004aad22;
+  min-width: 320px;
+  max-width: 380px;
+  min-height: 380px;
+  margin: 0 12px;
+  opacity: 0.4;
+  filter: blur(3px) grayscale(30%);
+  pointer-events: none;
+  transform: scale(0.92) translateY(20px);
+  transition: all 0.5s cubic-bezier(.4,1.6,.4,1);
+  position: absolute;
+  left: 50%;
+  top: 0;
+  z-index: 1;
+  visibility: hidden;
+}
+.lpp-carousel-card.active {
+  opacity: 1;
+  filter: none;
+  pointer-events: auto;
+  transform: scale(1) translateY(0);
+  z-index: 3;
+  visibility: visible;
+  position: relative;
+}
+.lpp-carousel-card.prev {
+  left: 10%;
+  visibility: visible;
+  z-index: 2;
+}
+.lpp-carousel-card.next {
+  left: 70%;
+  visibility: visible;
+  z-index: 2;
+}
+.lpp-carousel-card.hidden {
+  visibility: hidden;
+  z-index: 0;
+}
+.lpp-card-img {
+  width: 90px;
+  height: 90px;
+  object-fit: contain;
+  margin: 0 auto 16px auto;
+  display: block;
+}
+.lpp-card-content {
+  text-align: justify;
+  color: #222;
+}
+.lpp-card-content h3 {
+  color: #004aad;
+  font-size: 1.2rem;
+  margin-bottom: 12px;
+  text-align: center;
+}
+@media (max-width: 900px) {
+  .lpp-carousel-card.prev {
+    left: 0%;
+  }
+  .lpp-carousel-card.next {
+    left: 60%;
+  }
+}
+@media (max-width: 600px) {
+  .lpp-carousel-track {
+    min-height: 340px;
+  }
+  .lpp-carousel-card {
+    min-width: 90vw;
+    max-width: 98vw;
+    margin: 0 2vw;
+  }
+  .lpp-carousel-card.prev, .lpp-carousel-card.next {
+    left: 0%;
+  }
+}

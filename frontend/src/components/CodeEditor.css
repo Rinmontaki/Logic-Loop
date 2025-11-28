@@ -1,0 +1,19 @@
+.code-editor-dracula {
+  background: #282a36;
+  color: #f8f8f2;
+  border: 1.5px solid #44475a;
+  border-radius: 8px;
+  font-family: 'Fira Mono', 'Consolas', 'Menlo', 'Monaco', 'monospace';
+  font-size: 16px;
+  padding: 14px;
+  width: 100%;
+  min-height: 180px;
+  box-shadow: 0 2px 8px #0006;
+  outline: none;
+  resize: vertical;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+.code-editor-dracula:focus {
+  border: 2px solid #ff7f11;
+  box-shadow: 0 0 0 2px #bd93f955;
+}

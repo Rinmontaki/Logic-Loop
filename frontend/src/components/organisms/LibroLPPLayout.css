@@ -1,0 +1,38 @@
+/* Layout ocupa toda la página */
+/* Layout ocupa toda la página y centra los hijos en columna */
+.libro-lpp-layout {
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  min-height: 100vh;
+  height: 100vh;
+  background: linear-gradient(90deg, #eaf1ff 60%, #f7faff 100%);
+  transition: all 0.5s cubic-bezier(.7,1.7,.5,1.01);
+  overflow-x: hidden;
+  align-items: center;
+  justify-content: center;
+}
+/* libro-lpp-left eliminado, todo va en libro-lpp-layout */
+.libro-lpp-right {
+  width: 30vw;
+  min-width: 320px;
+  max-width: 600px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 48px;
+  background: #0B0C10;
+  box-shadow: -2px 0 24px #004aad11;
+  z-index: 2;
+  transition: all 0.5s cubic-bezier(.7,1.7,.5,1.01);
+}
+@media (max-width: 900px) {
+  .libro-lpp-left, .libro-lpp-right {
+    min-width: 0;
+    width: 100vw;
+    max-width: 100vw;
+  }
+  .libro-lpp-layout {
+    flex-direction: column;
+  }
+}
