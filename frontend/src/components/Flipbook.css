@@ -7,112 +7,129 @@
 
 /* ESTRUCTURA PRINCIPAL */
 .flipbook-shell {
-  width: 100vw;
+  width: 100%;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  background: #111827; /* fondo oscuro tipo lector */
+  background: radial-gradient(circle at top, #1f2933 0%, #0b1017 55%, #05070b 100%);
   position: relative;
-  overflow: hidden;
+  padding: 20px;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  padding-top: 32px;
+  overflow-x: hidden;
 }
 
-/* Contenedor principal del libro */
-.flipbook-zoom-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #111827;
-  border-radius: 16px;
-  box-shadow: 0 18px 45px rgba(0,0,0,0.55);
-  margin: 0 auto;
-  padding: 0;
-  max-width: 80vw;
-  max-height: calc(100vh - 190px);
-  min-width: 480px;
-  min-height: 360px;
-  overflow: hidden;
-}
-
-/* CONTENEDOR CENTRADO */
-.flipbook-centered {
-  overflow: visible !important;
+.flipbook-main-container {
   flex: 1;
   display: flex;
-  align-items: center;
   justify-content: center;
-  overflow: hidden;
-  background: transparent;
+  align-items: center;
+  width: 100%;
+  padding: 20px 0;
   position: relative;
-  width: 100vw;
-  height: calc(100vh - 120px);
 }
 
-/* WRAPPER PARA FLIPBOOK */
-.flipbook {
-  margin: 0 auto !important;
-  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.05) !important;
-  border-radius: 8px !important;
-  overflow: visible !important;
-  display: flex !important;
-  flex-direction: row !important;
-  transition: transform 0.2s cubic-bezier(.23,1,.32,1);
+.flipbook-main-container.with-controls {
+  /* más espacio para que la barra de controles no cubra el libro */
+  padding-top: 96px;
+  padding-bottom: 48px;
+}
+
+.flipbook-wrapper {
+  margin-top: 16px; /* separar visualmente de la barra */
+}
+
+.flipbook-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(145deg, #111827 0%, #070b10 40%, #050509 100%);
+  border-radius: 16px;
+  padding: 30px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.55);
+  position: relative;
+}
+
+/* Viewport con scroll vertical para evitar recortes al hacer zoom */
+.flipbook-scroll-viewport {
+  position: relative;
+  height: calc(100vh - 140px); /* header + controles aproximados */
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Contenedor para pan con mouse al hacer zoom */
+.flipbook-pan-container {
   width: 100%;
   height: 100%;
-  min-width: 0;
-  min-height: 0;
-  max-width: 100%;
-  max-height: 100%;
-  overflow-y: auto !important;
+  overflow: hidden;
 }
 
-/* PÁGINAS INDIVIDUALES DEL FLIPBOOK */
-.demoPage {
-  background: white !important;
+.flipbook-pan-container.zoomed {
+  cursor: grab;
+}
+
+.flipbook-pan-container.panning {
+  cursor: grabbing;
+}
+
+.flipbook-pan-inner {
+  display: inline-block;
+}
+
+/* ESTILOS CRÍTICOS PARA REACT-PAGEFLIP - CORREGIDOS */
+.flipbook-component {
+  margin: 0 auto !important;
+  box-shadow: 0 35px 80px rgba(0, 0, 0, 0.6) !important;
+  border-radius: 8px !important;
+  overflow: visible !important;
+  background: transparent !important;
+  display: block !important;
+  position: relative !important;
+}
+
+/* CONTENEDOR PRINCIPAL DE PÁGINAS */
+.flipbook-component .page-flip-book {
   display: flex !important;
-  flex-direction: column !important;
   justify-content: center !important;
   align-items: center !important;
-  border: 1px solid #d0d0d0 !important;
-  box-shadow:
-    inset 1px 0 0 rgba(0, 0, 0, 0.1),
-    inset -1px 0 0 rgba(0, 0, 0, 0.1) !important;
-  overflow: hidden !important;
-  padding: 0 !important;
-  box-sizing: border-box !important;
+  margin: 0 auto !important;
   position: relative !important;
-  width: 95% !important;
-  height: 95% !important;
-  min-width: 350px;
-  min-height: 500px;
+}
+
+/* WRAPPER DE CADA PÁGINA - ESENCIAL */
+.page-wrapper {
+  background: transparent !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+/* PÁGINAS INDIVIDUALES - ESTILOS CORREGIDOS */
+.demoPage {
+  background: #fffdf8 !important; /* papel suave */
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  border: 1px solid #d9d7d3 !important;
+  box-shadow:
+    inset 1px 0 0 rgba(0, 0, 0, 0.08),
+    inset -1px 0 0 rgba(0, 0, 0, 0.06),
+    0 6px 22px rgba(0, 0, 0, 0.25) !important; /* sombra más suave tipo demo */
+  overflow: hidden !important;
+  position: relative !important;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .page-content {
   width: 100% !important;
   height: 100% !important;
   display: flex !important;
-  flex-direction: column !important;
   justify-content: center !important;
   align-items: center !important;
-  background: white !important;
   position: relative !important;
-}
-
-.page-number {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 600;
-  z-index: 10;
-  pointer-events: none;
+  background: white !important;
 }
 
 .pdf-page-container {
@@ -122,43 +139,44 @@
   justify-content: center !important;
   align-items: center !important;
   background: white !important;
-  border-radius: 2px;
-  overflow: hidden;
-  min-width: 320px;
-  min-height: 480px;
 }
 
-/* ESTILOS PARA PDF */
-.react-pdf__Document {
+.page-number {
+  position: absolute;
+  bottom: 10px;
+  right: 16px;
+  background: rgba(0, 0, 0, 0.45);
+  color: #f8fafc;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  z-index: 10;
+}
+
+/* ESTILOS PARA SOMBRAS Y EFECTOS DE VOLTEO */
+.page-flip-page-wrapper {
+  perspective: 2000px !important;
   display: flex !important;
   justify-content: center !important;
   align-items: center !important;
-  background: transparent !important;
-  width: 100% !important;
-  height: 100% !important;
 }
 
-.react-pdf__Page {
+.page-flip-page {
   display: flex !important;
   justify-content: center !important;
   align-items: center !important;
-  background: white !important;
 }
 
-.react-pdf__Page__canvas {
-  display: block !important;
-  max-width: 100% !important;
-  max-height: 100% !important;
-  width: 100% !important;
-  height: 100% !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+.page-flip-page .page-flip-shadow {
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.12) 0%, transparent 100%) !important;
 }
 
 /* PANEL DE MINIATURAS */
 .flipbook-thumbnails-panel {
   position: absolute;
   right: 20px;
-  top: 100px;
+  top: 96px;
   bottom: 20px;
   width: 220px;
   background: #2d3748;
@@ -234,16 +252,15 @@
 }
 
 .thumbnail-preview {
-  width: 45px;
-  height: 60px;
-  background: #718096;
+  width: 48px;
+  height: 64px;
+  background: #2d3748;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 4px;
-  font-size: 12px;
-  color: white;
-  font-weight: 600;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.6);
 }
 
 .thumbnail-item.active .thumbnail-preview {
@@ -262,7 +279,7 @@
 }
 
 /* ESTADOS DE CARGA */
-.pdf-loading {
+.flipbook-loading {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -303,6 +320,32 @@
   width: 100%;
 }
 
+/* ESTILOS PARA PDF */
+.react-pdf__Document {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  background: transparent !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.react-pdf__Page {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  background: white !important;
+}
+
+.react-pdf__Page__canvas {
+  display: block !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  width: 100% !important;
+  height: 100% !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
 /* ERRORES */
 .pdf-error {
   display: flex;
@@ -315,6 +358,8 @@
   text-align: center;
   padding: 40px;
   background: #181a20;
+  border-radius: 12px;
+  margin: 20px;
 }
 
 .pdf-error h3 {
@@ -322,10 +367,170 @@
   color: #fc8181;
 }
 
+/* CONTROLES */
+.controls-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid #334155;
+  width: 100%;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.controls-left,
+.controls-center,
+.controls-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.page-navigation {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 8px 16px;
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+}
+
+.page-btn {
+  background: #4a5568;
+  border: none;
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.page-btn:hover {
+  background: #3182ce;
+  transform: scale(1.05);
+}
+
+.page-info {
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 80px;
+  text-align: center;
+}
+
+.action-btn {
+  background: #4a5568;
+  border: none;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+  background: #3182ce;
+  transform: translateY(-1px);
+}
+
+.action-btn.active {
+  background: #3182ce;
+  box-shadow: 0 0 0 2px rgba(49, 130, 206, 0.4);
+}
+
+/* ESTILOS PARA MODO PANTALLA COMPLETA */
+.flipbook-shell:fullscreen {
+  padding: 0;
+  background: #000;
+}
+
+.flipbook-shell:fullscreen .flipbook-main-container {
+  height: 100vh;
+  padding: 0;
+}
+
+.flipbook-shell:fullscreen .flipbook-wrapper {
+  border-radius: 0;
+  padding: 0;
+  background: #000;
+}
+
+/* Fullscreen wrapper including external controls */
+.libro-fullscreen-wrapper:fullscreen {
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.libro-fullscreen-wrapper:fullscreen .libro-controls {
+  position: sticky;
+  top: 0;
+  z-index: 1200;
+  width: 100%;
+  backdrop-filter: blur(10px);
+}
+
+.libro-fullscreen-wrapper:fullscreen .flipbook-main-container {
+  flex: 1;
+  width: 100%;
+}
+
 /* RESPONSIVE */
-@media (max-width: 768px) {
-  .flipbook-container {
+@media (max-width: 1024px) {
+  .flipbook-shell {
     padding: 10px;
+  }
+
+  .flipbook-wrapper {
+    padding: 20px;
+  }
+
+  .controls-header {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .controls-left,
+  .controls-center,
+  .controls-right {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .flipbook-shell {
+    padding: 5px;
+  }
+
+  .flipbook-main-container.with-controls {
+    padding-top: 120px;
+    padding-bottom: 64px;
+  }
+
+  .flipbook-scroll-viewport {
+    height: calc(100vh - 170px);
+  }
+
+  .flipbook-wrapper {
+    padding: 15px;
+    border-radius: 8px;
   }
 
   .flipbook-thumbnails-panel {
@@ -353,4 +558,96 @@
   .thumbnail-number {
     font-size: 11px;
   }
+
+  .controls-header {
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .controls-left,
+  .controls-center,
+  .controls-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 480px) {
+  .flipbook-shell {
+    padding: 0;
+  }
+
+  .flipbook-wrapper {
+    padding: 10px;
+    border-radius: 4px;
+  }
+
+  .page-navigation {
+    gap: 8px;
+    padding: 6px 12px;
+  }
+
+  .action-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+}
+
+/* ANIMACIONES Y TRANSICIONES */
+.flipbook-component .page-flip-page {
+  transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.thumbnail-item,
+.page-btn,
+.action-btn {
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* SCROLLBAR PERSONALIZADO */
+.thumbnails-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.thumbnails-list::-webkit-scrollbar-track {
+  background: #4a5568;
+  border-radius: 3px;
+}
+
+.thumbnails-list::-webkit-scrollbar-thumb {
+  background: #3182ce;
+  border-radius: 3px;
+}
+
+.thumbnails-list::-webkit-scrollbar-thumb:hover {
+  background: #63b3ed;
+}
+
+/* ESTILOS PARA IMÁGENES DENTRO DE LAS PÁGINAS */
+.pdf-page-container img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* CORRECCIÓN ESPECÍFICA PARA EL PROBLEMA DE ACORDEÓN */
+.page-flip-book {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+}
+
+.page-flip-page {
+  float: none !important;
+  display: inline-block !important;
+  position: relative !important;
+}
+
+/* FIX PARA DISPLAY FLEX */
+.flipbook-component .page-flip-book {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
 }

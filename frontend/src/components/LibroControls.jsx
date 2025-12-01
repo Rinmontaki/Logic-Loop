@@ -8,6 +8,7 @@ export default function LibroControls({
   onFitWidth,
   onFitHeight,
   onFitAuto,
+  fitMode,
   onPrevPage,
   onNextPage,
   onGoToPage,
@@ -17,6 +18,18 @@ export default function LibroControls({
   thumbnailsVisible,
   onReadSelection,
   currentZoom,
+  onZoomTo,
+  onToggleFullscreen,
+  isFullscreen,
+  onToggleAutoplay,
+  isAutoplay,
+  searchQuery,
+  onSearchQueryChange,
+  onSearchPrev,
+  onSearchNext,
+  searchInfo,
+  onToggleBookmark,
+  isBookmarked,
 }) {
   const [localZoom, setLocalZoom] = useState(currentZoom || 100);
 
@@ -29,24 +42,25 @@ export default function LibroControls({
 
   const handleZoomTo = (percentage) => {
     setLocalZoom(percentage);
-    
+    // Si existe API directa de zoom, úsala; si no, fallback incremental
+    if (onZoomTo) {
+      onZoomTo(percentage);
+      return;
+    }
     if (percentage === 100) {
       onZoomReset?.();
-    } else {
-      const current = currentZoom || 100;
-      const difference = percentage - current;
-      const steps = Math.abs(difference) / 25;
-      
-      if (difference > 0) {
-        // Zoom in
-        for (let i = 0; i < steps; i++) {
-          setTimeout(() => onZoomIn?.(), i * 50);
-        }
-      } else {
-        // Zoom out
-        for (let i = 0; i < steps; i++) {
-          setTimeout(() => onZoomOut?.(), i * 50);
-        }
+      return;
+    }
+    const current = currentZoom || 100;
+    const difference = percentage - current;
+    const steps = Math.abs(difference) / 25;
+    if (difference > 0) {
+      for (let i = 0; i < steps; i++) {
+        setTimeout(() => onZoomIn?.(), i * 30);
+      }
+    } else if (difference < 0) {
+      for (let i = 0; i < steps; i++) {
+        setTimeout(() => onZoomOut?.(), i * 30);
       }
     }
   };
@@ -129,7 +143,8 @@ export default function LibroControls({
             onClick={onFitWidth}
             aria-label="Ajustar al ancho"
             title="Ajustar al ancho"
-            className="control-btn"
+            className={`control-btn ${fitMode === 'width' ? 'active' : ''}`}
+            aria-pressed={fitMode === 'width'}
           >
             <span className="icon">⇄</span>
           </button>
@@ -137,7 +152,8 @@ export default function LibroControls({
             onClick={onFitHeight}
             aria-label="Ajustar al alto"
             title="Ajustar al alto"
-            className="control-btn"
+            className={`control-btn ${fitMode === 'height' ? 'active' : ''}`}
+            aria-pressed={fitMode === 'height'}
           >
             <span className="icon">⇅</span>
           </button>
@@ -145,10 +161,24 @@ export default function LibroControls({
             onClick={onFitAuto}
             aria-label="Ajuste automático"
             title="Ajuste automático"
-            className="control-btn"
+            className={`control-btn ${!fitMode || fitMode === 'auto' ? 'active' : ''}`}
+            aria-pressed={!fitMode || fitMode === 'auto'}
           >
             <span className="icon">⤢</span>
           </button>
+
+          {/* Pantalla completa dentro del grupo de ajuste */}
+          {onToggleFullscreen && (
+            <button
+              onClick={onToggleFullscreen}
+              aria-label={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
+              title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
+              className={`control-btn ${isFullscreen ? 'active' : ''}`}
+              aria-pressed={isFullscreen}
+            >
+              <span className="icon">⛶</span>
+            </button>
+          )}
         </div>
 
         <div className="controls-separator"></div>
@@ -194,6 +224,54 @@ export default function LibroControls({
 
         {/* CONTROLES ADICIONALES */}
         <div className="controls-group">
+          {/* BÚSQUEDA GLOBAL */}
+          {onSearchQueryChange && (
+            <div className="search-container">
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Buscar en el libro..."
+                value={searchQuery || ""}
+                onChange={(e) => onSearchQueryChange(e.target.value)}
+              />
+              <button
+                className="control-btn"
+                type="button"
+                onClick={onSearchPrev}
+                title="Resultado anterior"
+                aria-label="Resultado anterior"
+              >
+                <span className="icon">↑</span>
+              </button>
+              <button
+                className="control-btn"
+                type="button"
+                onClick={onSearchNext}
+                title="Siguiente resultado"
+                aria-label="Siguiente resultado"
+              >
+                <span className="icon">↓</span>
+              </button>
+              {searchInfo && (
+                <span className="search-info">
+                  {searchInfo.current + 1}/{searchInfo.total}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* MARCADOR DE PÁGINA */}
+          {onToggleBookmark && (
+            <button
+              onClick={onToggleBookmark}
+              aria-label={isBookmarked ? "Quitar marcador" : "Agregar marcador"}
+              title={isBookmarked ? "Quitar marcador" : "Agregar marcador"}
+              className={`control-btn ${isBookmarked ? "active" : ""}`}
+            >
+              <span className="icon">{isBookmarked ? "★" : "☆"}</span>
+            </button>
+          )}
+
           {onToggleThumbnails && (
             <button
               onClick={onToggleThumbnails}
@@ -213,6 +291,17 @@ export default function LibroControls({
           >
             <span className="icon">🔊</span>
           </button>
+
+          {onToggleAutoplay && (
+            <button
+              onClick={onToggleAutoplay}
+              aria-label={isAutoplay ? "Detener reproducción automática" : "Reproducción automática"}
+              title={isAutoplay ? "Detener reproducción automática" : "Reproducción automática"}
+              className={`control-btn ${isAutoplay ? "active" : ""}`}
+            >
+              <span className="icon">{isAutoplay ? "⏸" : "▶"}</span>
+            </button>
+          )}
         </div>
 
       </div>

@@ -1,10 +1,23 @@
 .libro-controls {
   background: #2c3e50;
-  padding: 12px 20px;
+  padding: 10px 16px; /* más compacto para no tapar */
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   margin-bottom: 20px;
   min-width: min-content;
+}
+
+/* Contenedor para posicionar los controles debajo del header global */
+.libro-controls-top {
+  position: sticky;
+  top: 64px; /* altura estimada del header del sitio */
+  z-index: 1200;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  background: transparent;
+  backdrop-filter: blur(8px);
+  padding: 8px 0;
 }
 
 .libro-controls-row {
@@ -144,6 +157,7 @@
   .libro-controls {
     padding: 10px 15px;
   }
+  .libro-controls-top { top: 72px; }
   
   .libro-controls-row {
     gap: 6px;
