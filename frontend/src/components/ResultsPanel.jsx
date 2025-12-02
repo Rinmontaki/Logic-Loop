@@ -77,6 +77,20 @@ export function ResultsPanel({ result }) {
             </div>
           </div>
 
+          {/* Banner de error fatal (por ejemplo: "❌ Error: ...") */}
+          {(!result.success && typeof result.message === 'string' && (/^\s*❌/u.test(result.message) || /❌\s*Error:/iu.test(result.message))) && (
+            <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-4">
+              <span className="text-red-600 text-xl flex-shrink-0 mt-0.5">⚠️</span>
+              <div>
+                <h4 className="text-red-900 mb-1 font-semibold">Error al validar con IA</h4>
+                <p className="text-sm text-red-700 break-words">{result.message}</p>
+                <p className="text-sm text-black mt-2">
+                  Reintenta en unos segundos. Si persiste, verifica tu conexión a internet.
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-3">
             <h4 className="text-black font-semibold">
               Verificación de requisitos:

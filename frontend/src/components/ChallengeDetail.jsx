@@ -1,5 +1,5 @@
 // ChallengeDetail.jsx
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ResultsPanel } from './ResultsPanel';
 import { validateCode } from '../services/api';
 import '../stylesRetosLPP.css';
@@ -63,19 +63,7 @@ const mapFeedbackToResult = (feedbackText) => {
     .replace(/---TESTS---[\s\S]*?---FIN_TESTS---/g, '')
     .trim();
 
-  // Caso: código correcto
-  if (mainText.startsWith('Código correcto')) {
-    return {
-      success: true,
-      message: mainText,
-      checks,
-      errors: [],
-      correctedCode,
-      testCases
-    };
-  }
-
-  // Caso: errores listados como en el SYSTEM_PROMPT
+  // Parseo de errores listados como en el SYSTEM_PROMPT
   const lines = mainText.split('\n');
   const firstLine = lines[0] || 'Errores detectados en tu código.';
   const errors = [];
@@ -97,9 +85,45 @@ const mapFeedbackToResult = (feedbackText) => {
     }
   });
 
+  // Señales robustas de éxito/fracaso
+  const fatalPrefix = /^\s*❌/u.test(feedbackText) || /❌\s*Error:/u.test(feedbackText);
+  const hasErrorsHeading = /^Errores encontrados\s*\(/.test(mainText);
+  const codePerfect = mainText.startsWith('Código correcto');
+
+  // Evaluar checks y pruebas si están presentes
+  const checksHasFalse = Array.isArray(checks) && checks.some((c) => c && c.passed === false);
+  const checksHasTrue = Array.isArray(checks) && checks.some((c) => c && c.passed === true);
+  const testsHasFalse = Array.isArray(testCases) && testCases.some((t) => t && t.passed === false);
+  const testsHasTrue = Array.isArray(testCases) && testCases.some((t) => t && t.passed === true);
+
+  // Regla de decisión para success
+  let success = false;
+  if (fatalPrefix) {
+    success = false;
+  } else if (hasErrorsHeading) {
+    success = false;
+  } else if (errors.length > 0) {
+    success = false;
+  } else if (Array.isArray(checks) && checks.length > 0 && checksHasFalse) {
+    success = false;
+  } else if (Array.isArray(testCases) && testCases.length > 0 && testsHasFalse) {
+    success = false;
+  } else if (codePerfect) {
+    success = true;
+  } else if (Array.isArray(checks) && checks.length > 0 && !checksHasFalse && checksHasTrue) {
+    // Si hay checks y todos los evaluados son true
+    success = true;
+  } else if (Array.isArray(testCases) && testCases.length > 0 && !testsHasFalse && testsHasTrue) {
+    // Si hay pruebas y todas las evaluadas son true
+    success = true;
+  } else {
+    // Conservador: si no hay señales claras de éxito, marcar como fallo
+    success = false;
+  }
+
   return {
-    success: errors.length === 0,
-    message: firstLine,
+    success,
+    message: codePerfect ? mainText : firstLine,
     checks,
     errors,
     correctedCode,
@@ -112,6 +136,109 @@ export function ChallengeDetail({ challenge, onBack }) {
   const [validationResult, setValidationResult] = useState(null);
   const [isValidating, setIsValidating] = useState(false);
   const [hintsOpen, setHintsOpen] = useState(false);
+  const [showGuideModal, setShowGuideModal] = useState(false);
+  const [showSoftModal, setShowSoftModal] = useState(false);
+  const [attemptsCount, setAttemptsCount] = useState(challenge.attempts || 0);
+  const startTimeRef = useRef(Date.now());
+  const lastSubmittedRef = useRef('');
+  const editorRef = useRef(null);
+
+  const SOFT_WARNING_AT = 4; // 3–4 intentos
+  const HARD_WARNING_AT = 8; // 7–8 intentos
+  const HARD_WARNING_MINUTES = 25; // 25 minutos sin progreso
+
+  const storageKeyAttempts = `attempts:${challenge.id}`;
+  const storageKeyLastCode = `lastCode:${challenge.id}`;
+
+  useEffect(() => {
+    try {
+      const savedAttempts = parseInt(localStorage.getItem(storageKeyAttempts) || 'NaN', 10);
+      if (!isNaN(savedAttempts)) setAttemptsCount(savedAttempts);
+      const lastCode = localStorage.getItem(storageKeyLastCode) || '';
+      lastSubmittedRef.current = lastCode;
+    } catch {}
+  }, []);
+
+  const handleEditorKeyDown = (e) => {
+    if (e.key !== 'Tab') return;
+    e.preventDefault();
+    const el = e.target;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const value = code || '';
+
+    // Helper to set selection after state update
+    const setSel = (s, e2) => {
+      setTimeout(() => {
+        try {
+          el.selectionStart = s;
+          el.selectionEnd = e2;
+        } catch {}
+      }, 0);
+    };
+
+    if (start !== end) {
+      // Indent/unindent all lines in selection
+      const before = value.slice(0, start);
+      const selected = value.slice(start, end);
+      const after = value.slice(end);
+      const lines = selected.split('\n');
+      if (e.shiftKey) {
+        let removedTotal = 0;
+        const unindented = lines.map((line) => {
+          if (line.startsWith('\t')) {
+            removedTotal += 1;
+            return line.slice(1);
+          }
+          const m = line.match(/^ {1,4}/);
+          if (m) {
+            removedTotal += m[0].length;
+            return line.slice(m[0].length);
+          }
+          return line;
+        }).join('\n');
+        const nextVal = before + unindented + after;
+        setCode(nextVal);
+        setSel(start, Math.max(start, end - removedTotal));
+      } else {
+        const indented = lines.map((line) => '\t' + line).join('\n');
+        const added = lines.length; // one tab per line
+        const nextVal = before + indented + after;
+        setCode(nextVal);
+        setSel(start + 1, end + added);
+      }
+    } else {
+      // Single caret: insert or remove indent at line start
+      const before = value.slice(0, start);
+      const after = value.slice(end);
+      if (e.shiftKey) {
+        // Unindent current line: find line start
+        const lineStart = before.lastIndexOf('\n') + 1;
+        let removed = 0;
+        let newBefore = before;
+        if (before[lineStart] === '\t') {
+          newBefore = before.slice(0, lineStart) + before.slice(lineStart + 1);
+          removed = 1;
+        } else {
+          const m = before.slice(lineStart).match(/^ {1,4}/);
+          if (m) {
+            newBefore = before.slice(0, lineStart) + before.slice(lineStart + m[0].length);
+            removed = m[0].length;
+          }
+        }
+        const nextVal = newBefore + after;
+        setCode(nextVal);
+        const pos = Math.max(start - removed, lineStart);
+        setSel(pos, pos);
+      } else {
+        const insert = '\t';
+        const nextVal = before + insert + after;
+        setCode(nextVal);
+        const pos = start + insert.length;
+        setSel(pos, pos);
+      }
+    }
+  };
 
   const handleValidate = async () => {
     setIsValidating(true);
@@ -119,6 +246,56 @@ export function ChallengeDetail({ challenge, onBack }) {
       const response = await validateCode(code);
       const mapped = mapFeedbackToResult(response.feedback);
       setValidationResult(mapped);
+      // Decidir si el intento fue significativo respecto al último enviado
+      const normalize = (s) => {
+        if (!s) return '';
+        let t = String(s)
+          .replace(/\/\*[\s\S]*?\*\//g, '') // quitar comentarios de bloque /* ... */
+          .replace(/[\u2190\u2B05\u27F5]/g, '<-') // flechas visuales a '<-'
+          .toLowerCase();
+        t = t.replace(/\s+/g, ' ').trim();
+        return t;
+      };
+      const currentNorm = normalize(code);
+      const lastNorm = lastSubmittedRef.current || '';
+      const meaningfulChange = currentNorm !== lastNorm;
+
+      // Guardar último código enviado
+      try {
+        localStorage.setItem(storageKeyLastCode, currentNorm);
+        lastSubmittedRef.current = currentNorm;
+      } catch {}
+
+      const elapsedMin = Math.floor((Date.now() - startTimeRef.current) / 60000);
+
+      // Incrementar intentos solo si hubo cambio significativo y no fue éxito
+      if (!mapped.success && meaningfulChange) {
+        const nextCount = (attemptsCount || 0) + 1;
+        setAttemptsCount(nextCount);
+        try { localStorage.setItem(storageKeyAttempts, String(nextCount)); } catch {}
+
+        // Aviso fuerte: muchos intentos o mucho tiempo
+        if (nextCount >= HARD_WARNING_AT || elapsedMin >= HARD_WARNING_MINUTES) {
+          setShowGuideModal(true);
+        } else if (nextCount >= SOFT_WARNING_AT) {
+          // Aviso suave: ofrecer pistas o repasar
+          setShowSoftModal(true);
+        }
+      }
+
+      // Detectar casos sin contenido útil: sin errores, sin checks, sin código, sin tests y mensaje vacío o de confusión
+      const noContent = (!mapped.errors || mapped.errors.length === 0)
+        && (!mapped.checks || mapped.checks.length === 0)
+        && (!mapped.correctedCode || mapped.correctedCode.trim() === '')
+        && (!mapped.testCases || mapped.testCases.length === 0);
+      const confusingMsg = !mapped.message
+        || mapped.message.trim() === ''
+        || /No comprendo/i.test(mapped.message)
+        || /No entiendo/i.test(mapped.message)
+        || /No se recibió respuesta/i.test(mapped.message);
+      if (noContent && confusingMsg) {
+        setShowGuideModal(true);
+      }
     } catch (error) {
       setValidationResult({
         success: false,
@@ -133,6 +310,7 @@ export function ChallengeDetail({ challenge, onBack }) {
         correctedCode: '',
         testCases: []
       });
+      setShowGuideModal(true);
     } finally {
       setIsValidating(false);
     }
@@ -208,7 +386,7 @@ export function ChallengeDetail({ challenge, onBack }) {
                 </span>
               </div>
               <div className="text-right">
-                <p className="text-sm text-black">Intentos: {challenge.attempts}</p>
+                <p className="text-sm text-black">Intentos: {attemptsCount}</p>
                 <p className="text-sm text-black">
                   Estado:{' '}
                   <span
@@ -336,8 +514,10 @@ export function ChallengeDetail({ challenge, onBack }) {
               {/* Code Editor */}
               <div className="p-4">
                 <textarea
+                  ref={editorRef}
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
+                  onKeyDown={handleEditorKeyDown}
                   className="w-full h-[400px] font-mono text-sm bg-slate-900 text-slate-100 p-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                   spellCheck={false}
                 />
@@ -382,6 +562,80 @@ export function ChallengeDetail({ challenge, onBack }) {
 
         {/* Results Panel */}
         {validationResult && <ResultsPanel result={validationResult} />}
+
+        {/* Modal de guía hacia el libro */}
+        {showGuideModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-lg border max-w-lg w-full p-6">
+              <h3 className="text-black mb-3 font-semibold">
+                Orientación sobre LPP
+              </h3>
+              <p className="text-sm text-black mb-4">
+                Aun no tienes claridad con la sintaxis correcta de LPP, por lo tanto te enviaremos al Libro de Fundamentos de Programacion en LPP, para que hagas un repaso y refuerces tu conocimiento.
+              </p>
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  className="px-3 py-1.5 rounded-md border text-sm font-medium text-black hover:bg-slate-50"
+                  onClick={() => {
+                    setShowGuideModal(false);
+                    // Recargar la página actual del reto
+                    try {
+                      window.location.reload();
+                    } catch {}
+                  }}
+                >
+                  Rechazar
+                </button>
+                <a
+                  href="/libro?page=15"
+                  className="px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                  onClick={() => setShowGuideModal(false)}
+                >
+                  Aceptar
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showSoftModal && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-40">
+            <div className="bg-white rounded-lg shadow-lg border max-w-lg w-full p-6">
+              <h3 className="text-black mb-3 font-semibold">¿Te ayudo a destrabar este reto?</h3>
+              <p className="text-sm text-black mb-4">
+                Has intentado este ejercicio varias veces. Eso está muy bien, así se aprende.
+                ¿Prefieres ver una pista o repasar rápidamente el tema?
+              </p>
+              <div className="flex items-center justify-end gap-3 flex-wrap">
+                <button
+                  type="button"
+                  className="px-3 py-1.5 rounded-md border text-sm font-medium text-black hover:bg-slate-50"
+                  onClick={() => {
+                    setShowSoftModal(false);
+                    setHintsOpen(true);
+                  }}
+                >
+                  Ver una pista
+                </button>
+                <a
+                  href="/libro?page=15"
+                  className="px-3 py-1.5 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                  onClick={() => setShowSoftModal(false)}
+                >
+                  Repasar el tema
+                </a>
+                <button
+                  type="button"
+                  className="px-3 py-1.5 rounded-md border text-sm font-medium text-black hover:bg-slate-50"
+                  onClick={() => setShowSoftModal(false)}
+                >
+                  Seguir intentando
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

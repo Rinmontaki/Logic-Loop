@@ -1,7 +1,8 @@
 import os
 from huggingface_hub import InferenceClient
 
-HF_TOKEN = os.getenv("HF_TOKEN", "")
+# Accept both HF_TOKEN and HF_API_KEY environment variables
+HF_TOKEN = os.getenv("HF_TOKEN") or os.getenv("HF_API_KEY") or ""
 
 client = InferenceClient(
     model="deepseek-ai/DeepSeek-V3",

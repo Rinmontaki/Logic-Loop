@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import LibroControls from "../components/LibroControls";
 import Flipbook from "../components/Flipbook";
 import "../components/LibroControls.css";
@@ -8,6 +8,7 @@ import "../components/LibroControls.css";
 export default function Libro() {
   const flipRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [pageTexts] = useState(undefined);
@@ -39,6 +40,19 @@ export default function Libro() {
     document.addEventListener('fullscreenchange', onFsChange);
     return () => document.removeEventListener('fullscreenchange', onFsChange);
   }, []);
+
+  // Al entrar con /libro?page=15, mover el flipbook a esa página al estar listo
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const pageParam = parseInt(params.get('page') || '0', 10);
+    if (!isNaN(pageParam) && pageParam > 0 && flipRef.current) {
+      // Si flipbook ya expone goTo, intentarlo con un pequeño retraso
+      const t = setTimeout(() => {
+        flipRef.current?.goTo?.(pageParam);
+      }, 200);
+      return () => clearTimeout(t);
+    }
+  }, [location.search]);
 
   return (
     <div className="libro-fullscreen-wrapper" style={{
@@ -118,7 +132,17 @@ export default function Libro() {
               ref={flipRef}
               fileUrl="/pdfs/libro.pdf"
               onPageChange={(n) => setCurrentPage(n)}
-              onReady={({ totalPages }) => setTotalPages(totalPages)}
+              onReady={({ totalPages }) => {
+                setTotalPages(totalPages);
+                // Intentar posicionar en la página indicada por query
+                try {
+                  const params = new URLSearchParams(location.search);
+                  const pageParam = parseInt(params.get('page') || '0', 10);
+                  if (!isNaN(pageParam) && pageParam > 0) {
+                    flipRef.current?.goTo?.(pageParam);
+                  }
+                } catch {}
+              }}
               thumbnailsVisible={thumbnailsVisible}
               onToggleThumbnails={() => setThumbnailsVisible((v) => !v)}
               onZoomChange={handleZoomChange}

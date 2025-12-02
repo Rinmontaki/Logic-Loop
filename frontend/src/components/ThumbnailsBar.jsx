@@ -160,7 +160,13 @@ export default function ThumbnailsBar({ pages, currentPage, onGoToPage, visible 
           <div className="thumb-title">
             {pageTitles[idx] || ''}
           </div>
-          <img src={src} alt={`Miniatura página ${idx + 1}`} />
+          <img
+            src={src}
+            alt={`Miniatura página ${idx + 1}`}
+            loading="lazy"
+            width={60}
+            height={84}
+          />
           <span>{idx + 1}</span>
 // ...existing code...
         </button>

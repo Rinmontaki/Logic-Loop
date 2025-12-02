@@ -30,7 +30,7 @@ const Flipbook = forwardRef(function Flipbook(
   const containerRef = useRef(null);
   const viewportRef = useRef(null); // scroll viewport para resetear scroll
 
-  // PDF cargado una sola vez y reutilizado
+  // PDF cargado en memoria para generar imágenes de páginas
   const [pdfDoc, setPdfDoc] = useState(null);
 
   const [numPages, setNumPages] = useState(0);
@@ -49,8 +49,13 @@ const Flipbook = forwardRef(function Flipbook(
   const [isAutoplay, setIsAutoplay] = useState(false);
   const autoplayTimerRef = useRef(null);
 
-  // Renderizar páginas como imágenes
+  // Ya no usaremos imágenes precargadas; renderizaremos capas de texto y anotaciones directamente
+  // Control liviano para páginas montadas
+  const [mountedPages, setMountedPages] = useState({});
+  // Imágenes renderizadas (dataURL) por página (1-indexed)
   const [visibleImages, setVisibleImages] = useState({});
+  // Miniaturas para todas las páginas
+  const [thumbImages, setThumbImages] = useState({});
 
   // Controles avanzados
   const [zoom, setZoom] = useState(125);            // 125% por defecto para mejor legibilidad
@@ -119,108 +124,137 @@ const Flipbook = forwardRef(function Flipbook(
     onReady?.({ totalPages: numPages });
   };
 
-  // Cargar el documento PDF una sola vez y reutilizarlo
+  // Cargar el PDF una sola vez
   useEffect(() => {
     let cancelled = false;
-
-    const loadPdf = async () => {
+    const load = async () => {
       try {
         const loadingTask = pdfjs.getDocument(fileUrl);
         const pdf = await loadingTask.promise;
         if (!cancelled) {
           setPdfDoc(pdf);
+          setNumPages(pdf.numPages || 0);
+          setIsLoading(false);
         }
       } catch (err) {
-        console.error("Error cargando PDF:", err);
-        if (!cancelled) {
-          setError("No se pudo cargar el PDF");
-        }
+        console.error('Error cargando PDF', err);
+        if (!cancelled) setError('No se pudo cargar el PDF');
       }
     };
-
-    loadPdf();
-
-    return () => {
-      cancelled = true;
-    };
+    load();
+    return () => { cancelled = true; };
   }, [fileUrl]);
 
+  // Marcar páginas cercanas como montadas (actual + adyacentes) para performance
+  useEffect(() => {
+    if (!numPages) return;
+    const near = [currentPage, currentPage + 1, currentPage - 1].filter(
+      (i) => i >= 0 && i < numPages
+    );
+    setMountedPages((prev) => {
+      const copy = { ...prev };
+      near.forEach((i) => (copy[i] = true));
+      return copy;
+    });
+  }, [currentPage, numPages]);
+
+  // Renderizar páginas para el flipbook - FORMA CORRECTA
+  // Generar imagen de una página (alta calidad) y devolver dataURL
   const getPageImage = useCallback(async (pageNum) => {
     if (!pdfDoc) return null;
-
     try {
       const page = await pdfDoc.getPage(pageNum);
-      
-      // Mantener escala alta para buena calidad
-      const viewport = page.getViewport({ scale: 2.0 });
-      const canvas = document.createElement("canvas");
-      const context = canvas.getContext("2d");
-      
+      // Escala 2 para buena nitidez (ajustable)
+      const viewport = page.getViewport({ scale: 2 });
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
       canvas.width = viewport.width;
       canvas.height = viewport.height;
-      
-      await page.render({
-        canvasContext: context,
-        viewport: viewport
-      }).promise;
-      
-      return canvas.toDataURL("image/jpeg", 0.9);
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      return canvas.toDataURL('image/jpeg', 0.92);
     } catch (err) {
-      console.error("Error generating page image:", err);
+      console.error('Error renderizando página', pageNum, err);
       return null;
     }
   }, [pdfDoc]);
 
-  // Precargar imágenes
+  // Precargar páginas adyacentes
   useEffect(() => {
-    if (!numPages || !pdfDoc) return;
-    
-    // Precargar solo páginas cercanas para evitar trabajo excesivo
-    const pagesToPreload = [
-      currentPage + 1,
-      currentPage - 1
-    ].filter(p => p >= 1 && p <= numPages);
-    
-    pagesToPreload.forEach((pageNum) => {
-      if (!visibleImages[pageNum]) {
-        getPageImage(pageNum).then((img) => {
+    if (!pdfDoc || !numPages) return;
+    const targets = [currentPage + 1, currentPage - 1].filter(p => p >= 1 && p <= numPages);
+    targets.forEach(p => {
+      if (!visibleImages[p]) {
+        getPageImage(p).then(img => {
           if (img) {
-            setVisibleImages(prev => {
-              if (prev[pageNum]) return prev;
-              return { ...prev, [pageNum]: img };
-            });
+            setVisibleImages(prev => prev[p] ? prev : { ...prev, [p]: img });
           }
         });
       }
     });
+    // Asegurar página actual
+    const currentReal = currentPage + 1;
+    if (!visibleImages[currentReal]) {
+      getPageImage(currentReal).then(img => {
+        if (img) {
+          setVisibleImages(prev => prev[currentReal] ? prev : { ...prev, [currentReal]: img });
+        }
+      });
+    }
   }, [currentPage, numPages, pdfDoc, getPageImage, visibleImages]);
 
-  // Renderizar páginas para el flipbook - FORMA CORRECTA
+  // Generar miniaturas para TODAS las páginas una vez
+  useEffect(() => {
+    if (!pdfDoc || !numPages) return;
+    let cancelled = false;
+    const generateAllThumbs = async () => {
+      for (let p = 1; p <= numPages; p++) {
+        if (cancelled) break;
+        if (thumbImages[p]) continue;
+        try {
+          const page = await pdfDoc.getPage(p);
+          const vp1 = page.getViewport({ scale: 1 });
+          const targetW = 120; // ancho de miniatura
+          const scale = Math.max(0.1, Math.min(1.0, targetW / vp1.width));
+          const viewport = page.getViewport({ scale });
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          canvas.width = Math.ceil(viewport.width);
+          canvas.height = Math.ceil(viewport.height);
+          await page.render({ canvasContext: ctx, viewport }).promise;
+          const data = canvas.toDataURL('image/jpeg', 0.7);
+          if (!cancelled) {
+            setThumbImages((prev) => (prev[p] ? prev : { ...prev, [p]: data }));
+          }
+        } catch (e) {
+          console.warn('No se pudo crear miniatura de página', p, e);
+        }
+      }
+    };
+    generateAllThumbs();
+    return () => { cancelled = true; };
+  }, [pdfDoc, numPages, thumbImages]);
+
   const renderPages = useMemo(() => {
     if (!numPages) return [];
-    
-    const pages = [];
+    const arr = [];
     for (let i = 0; i < numPages; i++) {
-      pages.push(
+      const pageNum = i + 1;
+      const img = visibleImages[pageNum];
+      arr.push(
         <div key={i} className="page-wrapper">
           <div className="demoPage">
             <div className="page-content">
-              <div className="page-number">{i + 1}</div>
+              <div className="page-number">{pageNum}</div>
               <div className="pdf-page-container">
-                {visibleImages[i + 1] ? (
+                {img ? (
                   <img
-                    src={visibleImages[i + 1]}
-                    alt={`Página ${i + 1}`}
-                    style={{ 
-                      width: "100%", 
-                      height: "100%", 
-                      objectFit: "contain" 
-                    }}
+                    src={img}
+                    alt={`Página ${pageNum}`}
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                    draggable={false}
                   />
                 ) : (
-                  <div className="page-loading">
-                    Cargando página {i + 1}...
-                  </div>
+                  <div className="page-loading">Cargando página {pageNum}...</div>
                 )}
               </div>
             </div>
@@ -228,7 +262,7 @@ const Flipbook = forwardRef(function Flipbook(
         </div>
       );
     }
-    return pages;
+    return arr;
   }, [numPages, visibleImages]);
 
   // Flipbook navigation
@@ -563,10 +597,17 @@ const Flipbook = forwardRef(function Flipbook(
                 onClick={() => flipRef.current?.pageFlip().flip(i)}
               >
                 <div className="thumbnail-preview">
-                  {visibleImages[i + 1] ? (
+                  {thumbImages[i + 1] ? (
                     <img
-                      src={visibleImages[i + 1]}
+                      src={thumbImages[i + 1]}
                       alt={`Miniatura página ${i + 1}`}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain',
+                        background: '#fff'
+                      }}
+                      draggable={false}
                     />
                   ) : (
                     <span>{i + 1}</span>

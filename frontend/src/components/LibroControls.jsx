@@ -137,49 +137,7 @@ export default function LibroControls({
 
         <div className="controls-separator"></div>
 
-        {/* AJUSTE DE PÁGINA */}
-        <div className="controls-group">
-          <button
-            onClick={onFitWidth}
-            aria-label="Ajustar al ancho"
-            title="Ajustar al ancho"
-            className={`control-btn ${fitMode === 'width' ? 'active' : ''}`}
-            aria-pressed={fitMode === 'width'}
-          >
-            <span className="icon">⇄</span>
-          </button>
-          <button
-            onClick={onFitHeight}
-            aria-label="Ajustar al alto"
-            title="Ajustar al alto"
-            className={`control-btn ${fitMode === 'height' ? 'active' : ''}`}
-            aria-pressed={fitMode === 'height'}
-          >
-            <span className="icon">⇅</span>
-          </button>
-          <button
-            onClick={onFitAuto}
-            aria-label="Ajuste automático"
-            title="Ajuste automático"
-            className={`control-btn ${!fitMode || fitMode === 'auto' ? 'active' : ''}`}
-            aria-pressed={!fitMode || fitMode === 'auto'}
-          >
-            <span className="icon">⤢</span>
-          </button>
-
-          {/* Pantalla completa dentro del grupo de ajuste */}
-          {onToggleFullscreen && (
-            <button
-              onClick={onToggleFullscreen}
-              aria-label={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
-              title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
-              className={`control-btn ${isFullscreen ? 'active' : ''}`}
-              aria-pressed={isFullscreen}
-            >
-              <span className="icon">⛶</span>
-            </button>
-          )}
-        </div>
+        {/* Eliminado: Ajuste de página (ancho/alto/auto) */}
 
         <div className="controls-separator"></div>
 
@@ -224,6 +182,17 @@ export default function LibroControls({
 
         {/* CONTROLES ADICIONALES */}
         <div className="controls-group">
+          {onToggleFullscreen && (
+            <button
+              onClick={onToggleFullscreen}
+              aria-label={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
+              title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
+              className={`control-btn ${isFullscreen ? 'active' : ''}`}
+              aria-pressed={isFullscreen}
+            >
+              <span className="icon">⛶</span>
+            </button>
+          )}
           {/* BÚSQUEDA GLOBAL */}
           {onSearchQueryChange && (
             <div className="search-container">

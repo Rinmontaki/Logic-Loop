@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.bb2a893b.css",
-    "main.js": "/static/js/main.53ead1b5.js",
+    "main.css": "/static/css/main.2a8c895c.css",
+    "main.js": "/static/js/main.ad82b7fc.js",
     "static/media/Logo.png": "/static/media/Logo.bfecde693e9e89839234.png",
     "static/media/ciclos.png": "/static/media/ciclos.d761d610d3ae8b68d976.png",
     "static/media/funciones.png": "/static/media/funciones.814144315f3c53b0edc3.png",
@@ -11,11 +11,11 @@
     "static/media/vectores.jpg": "/static/media/vectores.ef230c54c35662e959ee.jpg",
     "static/media/registros.jpg": "/static/media/registros.eee4833be64e6f57c58f.jpg",
     "index.html": "/index.html",
-    "main.bb2a893b.css.map": "/static/css/main.bb2a893b.css.map",
-    "main.53ead1b5.js.map": "/static/js/main.53ead1b5.js.map"
+    "main.2a8c895c.css.map": "/static/css/main.2a8c895c.css.map",
+    "main.ad82b7fc.js.map": "/static/js/main.ad82b7fc.js.map"
   },
   "entrypoints": [
-    "static/css/main.bb2a893b.css",
-    "static/js/main.53ead1b5.js"
+    "static/css/main.2a8c895c.css",
+    "static/js/main.ad82b7fc.js"
   ]
 }
