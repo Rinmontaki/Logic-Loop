@@ -1,10 +1,12 @@
 // ResultsPanel.jsx
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import '../stylesRetosLPP.css';
 
 export function ResultsPanel({ result }) {
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState('resumen');
+  const navigate = useNavigate();
 
   const handleCopy = () => {
     if (!result?.correctedCode) return;
@@ -74,6 +76,25 @@ export function ResultsPanel({ result }) {
                   : 'Tu código necesita algunas correcciones'}
               </h3>
               <p className="text-black">{result.message}</p>
+              {/* Botón Repasar tema: lleva al libro y, si hay página sugerida, la pasa por state */}
+              {result?.reviewPage && (
+                <div className="mt-4">
+                  <button
+                    type="button"
+                    className="inline-flex items-center px-3 py-1.5 rounded-md border text-sm font-medium text-black hover:bg-slate-50 transition-colors"
+                    onClick={() => {
+                      const target = Number(result.reviewPage);
+                      if (Number.isFinite(target) && target > 0) {
+                        navigate('/libro', { state: { targetPage: target } });
+                      } else {
+                        navigate('/libro');
+                      }
+                    }}
+                  >
+                    📖 Repasar tema
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 

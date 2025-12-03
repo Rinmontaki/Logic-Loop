@@ -19,6 +19,7 @@ const Flipbook = forwardRef(function Flipbook(
     fileUrl = "/pdfs/libro.pdf",
     onPageChange,
     onReady,
+    onInteractiveReady,
     showControls = true,
     thumbnailsVisible = false,
     onToggleThumbnails,
@@ -502,6 +503,17 @@ const Flipbook = forwardRef(function Flipbook(
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [numPages]);
+
+  // Señal: HTMLFlipBook listo para interacción (API disponible)
+  const interactiveReadySentRef = useRef(false);
+  useEffect(() => {
+    if (interactiveReadySentRef.current) return;
+    const api = flipRef.current?.pageFlip?.();
+    if (api && typeof api.flip === 'function') {
+      interactiveReadySentRef.current = true;
+      onInteractiveReady?.();
+    }
+  });
 
   // Métodos públicos para que la página `Libro` controle el flipbook
   useImperativeHandle(ref, () => ({

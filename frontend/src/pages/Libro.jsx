@@ -11,10 +11,26 @@ export default function Libro() {
   const location = useLocation();
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  // Leer página objetivo desde state para no depender de la URL
+  const targetPage = Number(location.state?.targetPage) || null;
+  // Normalizar URL si viene como /libro?page=15: quitar query y pasar state
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const pageParam = parseInt(params.get('page') || '0', 10);
+    if (!isNaN(pageParam) && pageParam > 0) {
+      // Navegar a la misma ruta sin query, preservando el state con targetPage
+      navigate('/libro', { state: { targetPage: pageParam }, replace: true });
+    }
+  }, [location.search, navigate]);
   const [pageTexts] = useState(undefined);
   const [thumbnailsVisible, setThumbnailsVisible] = useState(false);
   const [zoom, setZoom] = useState(125);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  // Control para realizar el salto solo una vez de forma confiable
+  const [didJump, setDidJump] = useState(false);
+  // Señales de readiness
+  const [pdfReady, setPdfReady] = useState(false);
+  const [flipReady, setFlipReady] = useState(false);
 
   // Funciones para controles del Flipbook
   const handleZoomIn = () => flipRef.current?.zoomIn();
@@ -41,18 +57,9 @@ export default function Libro() {
     return () => document.removeEventListener('fullscreenchange', onFsChange);
   }, []);
 
-  // Al entrar con /libro?page=15, mover el flipbook a esa página al estar listo
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const pageParam = parseInt(params.get('page') || '0', 10);
-    if (!isNaN(pageParam) && pageParam > 0 && flipRef.current) {
-      // Si flipbook ya expone goTo, intentarlo con un pequeño retraso
-      const t = setTimeout(() => {
-        flipRef.current?.goTo?.(pageParam);
-      }, 200);
-      return () => clearTimeout(t);
-    }
-  }, [location.search]);
+  // Importante: NO saltar de página hasta que el Flipbook esté listo.
+  // Se elimina el efecto que intentaba navegar antes de que el componente termine de cargar,
+  // para evitar cambios de ruta y garantizar que el salto ocurra únicamente tras onReady.
 
   return (
     <div className="libro-fullscreen-wrapper" style={{
@@ -134,15 +141,9 @@ export default function Libro() {
               onPageChange={(n) => setCurrentPage(n)}
               onReady={({ totalPages }) => {
                 setTotalPages(totalPages);
-                // Intentar posicionar en la página indicada por query
-                try {
-                  const params = new URLSearchParams(location.search);
-                  const pageParam = parseInt(params.get('page') || '0', 10);
-                  if (!isNaN(pageParam) && pageParam > 0) {
-                    flipRef.current?.goTo?.(pageParam);
-                  }
-                } catch {}
+                setPdfReady(true);
               }}
+              onInteractiveReady={() => setFlipReady(true)}
               thumbnailsVisible={thumbnailsVisible}
               onToggleThumbnails={() => setThumbnailsVisible((v) => !v)}
               onZoomChange={handleZoomChange}
@@ -151,6 +152,45 @@ export default function Libro() {
           </div>
         </div>
       </div>
+      {/* Efecto de salto confiable */}
+      <LibroJumpEffect
+        flipRef={flipRef}
+        totalPages={totalPages}
+        targetPage={targetPage}
+        didJump={didJump}
+        setDidJump={setDidJump}
+        pdfReady={pdfReady}
+        flipReady={flipReady}
+      />
     </div>
   );
+}
+
+// Efecto robusto: espera a que Flipbook exponga la API y salta una sola vez
+// Esto cubre casos donde onReady ocurre antes de que HTMLFlipBook monte totalmente.
+export function LibroJumpEffect({ flipRef, totalPages, targetPage, didJump, setDidJump, pdfReady, flipReady }) {
+  useEffect(() => {
+    if (didJump) return;
+    if (!pdfReady || !flipReady) return;
+    if (!Number.isFinite(targetPage) || targetPage <= 0) return;
+    if (!totalPages || totalPages <= 0) return;
+
+    const safePage = Math.min(totalPages, Math.max(1, targetPage));
+    let attempts = 0;
+    const maxAttempts = 20; // ~2s si interval es 100ms
+    const interval = setInterval(() => {
+      attempts++;
+      const api = flipRef.current?.pageFlip?.();
+      if (api && typeof api.flip === 'function') {
+        api.flip(safePage - 1);
+        setDidJump(true);
+        clearInterval(interval);
+      } else if (attempts >= maxAttempts) {
+        clearInterval(interval);
+      }
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [didJump, flipRef, totalPages, targetPage, setDidJump, pdfReady, flipReady]);
+  return null;
 }
