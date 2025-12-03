@@ -4,7 +4,7 @@ import LppCardsCarousel from "../components/LppCardsCarousel";
 export default function Home() {
   return (
     <div className="home-landing">
-      <h1 className="home-title">Bienvenido a LPP-Curso</h1>
+      <h1 className="home-title">Bienvenido a Logic Loop</h1>
       <p className="home-desc">
         Plataforma interactiva para aprender y practicar pseudocódigo LPP.<br />
         Accede a temas, galería, creadores y mucho más tras iniciar sesión.
